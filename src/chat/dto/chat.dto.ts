@@ -36,25 +36,9 @@ export class UserConnectionRequest {
   roomId: string;
 }
 
-export class CreatedByType {
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  fullName: string;
-
-  @IsString()
-  @IsNotEmpty()
-  userName: string;
-}
-
 export class CreateRoomRequest {
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreatedByType)
-  createdBy: CreatedByType;
+  @IsString()
+  createdBy: string;
 
   @IsString()
   @IsNotEmpty()
@@ -125,6 +109,10 @@ export class RoomChatListRequest extends PaginationListRequest {
   @IsString()
   @IsNotEmpty()
   roomId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
 }
 
 export class RoomListRequest extends PaginationListRequest {

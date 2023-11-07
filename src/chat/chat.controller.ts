@@ -3,6 +3,7 @@ import { ChatService } from './chat.service';
 import {
   AddMemberRoomRequest,
   CreateRoomRequest,
+  RoomChatListRequest,
   RoomListRequest,
   UpdateRoomRequest,
 } from './dto';
@@ -37,6 +38,18 @@ export class ChatController {
   @Put('room/remove-user')
   private async removeUserInRoom(@Body() body: AddMemberRoomRequest) {
     const response = await this.chatService.removeUserRoom(body);
+    return response;
+  }
+
+  @Get('users-list')
+  private async usersList(@Query() query: RoomListRequest) {
+    const response = await this.chatService.usersList(query);
+    return response;
+  }
+
+  @Get('room-chat')
+  private async roomChatList(@Query() query: RoomChatListRequest) {
+    const response = await this.chatService.roomChatList(query);
     return response;
   }
 }

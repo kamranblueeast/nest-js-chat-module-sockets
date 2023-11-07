@@ -37,11 +37,11 @@ export class ChatService {
       const isExist = await this.roomModel.findOne({
         $or: [
           {
-            members: data.createdBy.userId,
-            'createdBy.userId': data.members[0],
+            members: data.createdBy,
+            createdBy: data.members[0],
           },
           {
-            'createdBy.userId': data.createdBy.userId,
+            createdBy: data.createdBy,
             members: data.members[0],
           },
         ],
@@ -125,7 +125,7 @@ export class ChatService {
 
     let totalCount = await this.roomModel.countDocuments({
       $or: [
-        { 'createdBy.userId': data.userId },
+        { createdBy: data.userId },
         {
           members: { $in: data.userId },
         },
@@ -135,7 +135,7 @@ export class ChatService {
     const response = await this.roomModel
       .find({
         $or: [
-          { 'createdBy.userId': data.userId },
+          { createdBy: data.userId },
           {
             members: { $in: data.userId },
           },
@@ -189,17 +189,21 @@ export class ChatService {
     return messages;
   }
 
-  async usersList(data: PaginationListRequest, userId: string) {
+  async usersList(data: RoomListRequest) {
     const skip = (Number(data.page) - 1) * Number(data.pageSize);
 
     let totalCount = await this.chatModel.aggregate([
       // match messages where the userId exists as either the senderId or receiverId
       {
         $match: {
-          deletedBy: { $not: { $in: [new mongoose.Types.ObjectId(userId)] } },
+          deletedBy: {
+            $not: { $in: [data.userId] },
+          },
           $or: [
-            { senderId: new mongoose.Types.ObjectId(userId) },
-            { receiverId: new mongoose.Types.ObjectId(userId) },
+            { senderId: data.userId },
+            {
+              receiverIds: { $in: [data.userId] },
+            },
           ],
         },
       },
@@ -213,34 +217,6 @@ export class ChatService {
           latestMessage: { $first: '$$ROOT' },
         },
       },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'latestMessage.senderId',
-          foreignField: '_id',
-          as: 'sender',
-          pipeline: [
-            {
-              $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } },
-            },
-          ],
-        },
-      },
-
-      // lookup receiver details based on receiverId
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'latestMessage.receiverId',
-          foreignField: '_id',
-          as: 'receiver',
-          pipeline: [
-            {
-              $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } },
-            },
-          ],
-        },
-      },
       { $count: 'totalCount' },
     ]);
 
@@ -248,14 +224,17 @@ export class ChatService {
       // match messages where the userId exists as either the senderId or receiverId
       {
         $match: {
-          deletedBy: { $not: { $in: [new mongoose.Types.ObjectId(userId)] } },
+          deletedBy: {
+            $not: { $in: [data.userId] },
+          },
           $or: [
-            { senderId: new mongoose.Types.ObjectId(userId) },
-            { receiverId: new mongoose.Types.ObjectId(userId) },
+            { senderId: data.userId },
+            {
+              receiverIds: { $in: [data.userId] },
+            },
           ],
         },
       },
-
       {
         $sort: {
           _id: -1,
@@ -266,85 +245,15 @@ export class ChatService {
       {
         $group: {
           _id: '$roomId',
-          unreadCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$isReceiverRead', false] },
-                    {
-                      $eq: ['$receiverId', new mongoose.Types.ObjectId(userId)],
-                    },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
           latestMessage: { $first: '$$ROOT' },
         },
       },
       {
         $lookup: {
-          from: 'users',
-          localField: 'latestMessage.senderId',
-          foreignField: '_id',
-          as: 'sender',
-          pipeline: [
-            {
-              $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } },
-            },
-            {
-              $project: {
-                _id: 1,
-                fullName: 1,
-                gender: 1,
-                relationshipStatus: 1,
-                userName: 1,
-                isDisplayGender: 1,
-                isDisplayRelationshipStatus: 1,
-                userAbout: 1,
-                profileURL: 1,
-              },
-            },
-          ],
-        },
-      },
-
-      {
-        $lookup: {
-          from: 'userfriends',
+          from: 'rooms',
           localField: 'latestMessage.roomId',
           foreignField: '_id',
           as: 'room',
-        },
-      },
-      // lookup receiver details based on receiverId
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'latestMessage.receiverId',
-          foreignField: '_id',
-          as: 'receiver',
-          pipeline: [
-            {
-              $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } },
-            },
-            {
-              $project: {
-                _id: 1,
-                fullName: 1,
-                gender: 1,
-                relationshipStatus: 1,
-                userName: 1,
-                isDisplayGender: 1,
-                isDisplayRelationshipStatus: 1,
-                userAbout: 1,
-                profileURL: 1,
-              },
-            },
-          ],
         },
       },
       {
@@ -359,11 +268,10 @@ export class ChatService {
           _id: '$latestMessage._id',
           createdAt: '$latestMessage.createdAt',
           roomId: '$latestMessage.roomId',
-          sender: { $arrayElemAt: ['$sender', 0] },
-          receiver: { $arrayElemAt: ['$receiver', 0] },
+          sender: 1,
+          receiver: 1,
           message: '$latestMessage.message',
           messageType: '$latestMessage.messageType',
-          unreadCount: 1,
           room: { $arrayElemAt: ['$room', 0] },
         },
       },
@@ -385,35 +293,44 @@ export class ChatService {
     };
     return {
       statusCode: HttpStatus.OK,
-      data: JSON.stringify(paginatedData),
+      data: paginatedData,
       error: [],
       success: true,
     };
   }
 
-  async roomChatList(data: RoomChatListRequest, userId: string) {
+  async roomChatList(data: RoomChatListRequest) {
     const skip = (Number(data.page) - 1) * Number(data.pageSize);
 
     let totalCount = await this.chatModel.countDocuments({
       roomId: data.roomId,
-      deletedBy: { $not: { $in: [userId] } },
+      $or: [
+        {
+          receiverIds: { $in: [data.userId] },
+        },
+        {
+          senderId: data.userId,
+        },
+      ],
+      deletedBy: { $not: { $in: [data.userId] } },
     });
 
     const response = await this.chatModel
-      .find({ roomId: data.roomId, deletedBy: { $not: { $in: [userId] } } })
+      .find({
+        roomId: data.roomId,
+        $or: [
+          {
+            receiverIds: { $in: [data.userId] },
+          },
+          {
+            senderId: data.userId,
+          },
+        ],
+        deletedBy: { $not: { $in: [data.userId] } },
+      })
       .sort({ createdAt: -1 })
       .skip(+skip)
-      .limit(+data.pageSize)
-      .populate({
-        path: 'senderId',
-        select: 'email fullName userName thumbnailURL',
-        match: { _id: { $ne: userId } },
-      })
-      .populate({
-        path: 'receiverId',
-        select: 'email fullName userName thumbnailURL',
-        match: { _id: { $ne: userId } },
-      });
+      .limit(+data.pageSize);
 
     totalCount = totalCount ? totalCount : 0;
     const totalPages = Math.ceil(+totalCount / +data.pageSize);
@@ -426,7 +343,7 @@ export class ChatService {
     };
     return {
       statusCode: HttpStatus.OK,
-      data: JSON.stringify(paginatedData),
+      data: paginatedData,
       error: [],
       success: true,
     };

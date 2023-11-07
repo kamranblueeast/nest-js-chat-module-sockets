@@ -1,5 +1,3 @@
-// src/chat/chat.gateway.ts
-
 import { WsExceptionFilter } from '@app/shared/filter';
 import { Inject, UseFilters } from '@nestjs/common';
 import {
@@ -98,12 +96,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
 
     const messages = await this.chatService.addMessage(messagePayload);
-    // if (!client.user.userName) {
-    //   const user = await this.userModel.findById({ _id: client.user.userId });
-    //   if (user) {
-    //     client.user.userName = user.userName;
-    //   }
-    // }
+  
     if (messages) {
       //send message to receiver on specific room id
       const messageEmit: any = {
@@ -116,24 +109,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server
         .to(roomId)
         .emit('messageReceived', JSON.stringify(messageEmit));
-
-      // if (notificationSetting?.message && !sendNotification) {
-      //   const messageBy = await this.userModel
-      //     .findOne({ _id: client.user.userId })
-      //     .select('fullName profileURL gender thumbnailURL userName');
-      //   await this.notificationService.sendDataNotification(
-      //     notificationSetting.userId.deviceToken,
-      //     {
-      //       data: JSON.stringify({
-      //         message: 'Sent you a Message',
-      //         type: 'Message',
-      //         sender: messageBy,
-      //         roomId: roomId,
-      //       }),
-      //     },
-      //     'high',
-      //   );
-      // }
       console.log('message sent');
     }
   }

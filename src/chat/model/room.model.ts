@@ -6,21 +6,11 @@ import { BaseModel } from '@app/shared/base-model';
 
 export type RoomDocument = HydratedDocument<Room>;
 
-export class UserType {
-  @Prop()
-  userId: string;
-
-  @Prop()
-  fullName: string;
-
-  @Prop()
-  userName: string;
-}
 
 @Schema()
 export class Room extends BaseModel {
-  @Prop({ type: UserType })
-  createdBy: UserType;
+  @Prop()
+  createdBy: string;
 
   @Prop()
   roomTitle: string;
