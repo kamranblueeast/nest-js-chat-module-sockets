@@ -2,12 +2,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { RedisIoAdapter } from './redis/redis.adapter';
 import { BadRequestException, Logger, ValidationError, ValidationPipe } from '@nestjs/common';
+import { CorsMiddleware } from '@nestjs/platform-express';
+
 import * as dotenv from 'dotenv';
 dotenv.config();
 const logger = new Logger('Crew Chat');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(CorsMiddleware());
+
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
 
