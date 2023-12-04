@@ -18,8 +18,12 @@ import {
 } from './dto';
 import { validate } from 'class-validator';
 import { ChatService } from './chat.service';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-@WebSocketGateway()
+
+
+@WebSocketGateway(+process.env.CHAT_GATEWAY_PORT)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @Inject(ChatService)
   private readonly chatService: ChatService;
