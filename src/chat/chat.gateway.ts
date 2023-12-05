@@ -23,7 +23,7 @@ dotenv.config();
 
 
 
-@WebSocketGateway(+process.env.CHAT_GATEWAY_PORT)
+@WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @Inject(ChatService)
   private readonly chatService: ChatService;
