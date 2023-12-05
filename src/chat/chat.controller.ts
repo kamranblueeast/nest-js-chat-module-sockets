@@ -6,6 +6,7 @@ import {
   RoomChatListRequest,
   RoomListRequest,
   UpdateRoomRequest,
+  UserConnectionRequest,
 } from './dto';
 import { query } from 'express';
 
@@ -28,6 +29,11 @@ export class ChatController {
   @Get('rooms')
   private async roomList(@Query() query: RoomListRequest) {
     const response = await this.chatService.roomList(query);
+    return response;
+  }
+  @Get('room')
+  private async roomDetail(@Query() query: UserConnectionRequest) {
+    const response = await this.chatService.room(query);
     return response;
   }
   @Put('room/add-user')

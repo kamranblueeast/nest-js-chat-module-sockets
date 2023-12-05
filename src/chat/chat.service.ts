@@ -162,6 +162,15 @@ export class ChatService {
       success: true,
     };
   }
+  async room(data: UserConnectionRequest) {
+    const response = await this.roomModel.findOne({ _id: data.roomId });
+
+    return {
+      statusCode: HttpStatus.OK,
+      data: response,
+      success: true,
+    };
+  }
 
   async addMessage(data) {
     const response = await this.chatModel.create(data);
