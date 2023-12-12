@@ -36,6 +36,12 @@ export class UserConnectionRequest {
   roomId: string;
 }
 
+export class UserRoomRequest extends UserConnectionRequest {
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+}
+
 export class CreateRoomRequest {
   @IsString()
   createdBy: string;

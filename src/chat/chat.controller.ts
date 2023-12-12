@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import {
   AddMemberRoomRequest,
@@ -7,6 +7,7 @@ import {
   RoomListRequest,
   UpdateRoomRequest,
   UserConnectionRequest,
+  UserRoomRequest,
 } from './dto';
 import { query } from 'express';
 
@@ -56,6 +57,11 @@ export class ChatController {
   @Get('room-chat')
   private async roomChatList(@Query() query: RoomChatListRequest) {
     const response = await this.chatService.roomChatList(query);
+    return response;
+  }
+  @Delete('room')
+  private async deleteRoom(@Query() query: UserRoomRequest) {
+    const response = await this.chatService.deleteRoomChat(query);
     return response;
   }
 }

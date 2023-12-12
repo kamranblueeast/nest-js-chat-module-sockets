@@ -17,6 +17,7 @@ import {
   RoomListRequest,
   UpdateRoomRequest,
   UserConnectionRequest,
+  UserRoomRequest,
 } from './dto';
 import { RoomTypeEnum } from '@app/shared/enum/chat.enum';
 
@@ -358,10 +359,10 @@ export class ChatService {
     };
   }
 
-  async deleteRoomChat(data: UserConnectionRequest, userId: string) {
+  async deleteRoomChat(data: UserRoomRequest) {
     const roomChat = await this.chatModel.updateMany(
       { roomId: data.roomId },
-      { $addToSet: { deletedBy: userId } },
+      { $addToSet: { deletedBy: data.userId } },
     );
 
     return {
