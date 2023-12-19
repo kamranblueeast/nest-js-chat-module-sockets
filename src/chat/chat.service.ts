@@ -372,4 +372,16 @@ export class ChatService {
       success: true,
     };
   }
+
+  async deleteRoom(data: UserConnectionRequest) {
+    await this.chatModel.deleteMany({ roomId: data.roomId });
+    const roomChat = await this.roomModel.deleteOne({ _id: data.roomId });
+
+    return {
+      statusCode: HttpStatus.OK,
+      data: { message: 'Room deleted successfully!' },
+      error: [],
+      success: true,
+    };
+  }
 }

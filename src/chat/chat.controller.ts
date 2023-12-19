@@ -60,8 +60,8 @@ export class ChatController {
     return response;
   }
   @Delete('room')
-  private async deleteRoom(@Query() query: UserRoomRequest) {
-    const response = await this.chatService.deleteRoomChat(query);
+  private async deleteRoom(@Query() query: UserConnectionRequest) {
+    const response = await this.chatService.deleteRoom(query);
     return response;
   }
 }
