@@ -91,12 +91,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (errors.length > 0) {
       throw new WsException(errors);
     }
-    const { receiverIds, roomId, senderId, content } = data;
+    const { receiverIds, roomId, senderId, content, senderName } = data;
     const messagePayload: any = {
       receiverIds,
       senderId,
       roomId: roomId,
       content,
+      senderName
     };
 
     const messages = await this.chatService.addMessage(messagePayload);
@@ -107,6 +108,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageId: messages._id,
         content: content,
         senderId,
+        senderName,
         roomId,
         createdAt: messages.createdAt,
       };

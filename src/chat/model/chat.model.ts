@@ -21,6 +21,9 @@ export class Chat extends BaseModel {
   @Prop()
   content: string;
 
+  @Prop()
+  senderName: string;
+
   @Prop({ type: Boolean, default: false })
   isEdited: boolean;
 

@@ -102,6 +102,10 @@ export class SendMessageRequest {
   @IsNotEmpty()
   senderId: string;
 
+  @IsString()
+  @IsNotEmpty()
+  senderName: string;
+
   @IsArray()
   @IsNotEmpty()
   receiverIds: string[];
