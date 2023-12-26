@@ -18,6 +18,10 @@ export class RedisIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
     server.adapter(this.adapterConstructor);
+
+    // Enable CORS for Socket.IO
+    server.origins('*:*'); // Adjust this based on your requirements
+
     return server;
   }
 }
