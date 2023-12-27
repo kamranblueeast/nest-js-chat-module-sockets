@@ -21,9 +21,14 @@ import { ChatService } from './chat.service';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-
-
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*', // Use '*' to allow all origins
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['*'],
+    credentials: true,
+  },
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @Inject(ChatService)
   private readonly chatService: ChatService;
@@ -97,11 +102,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       senderId,
       roomId: roomId,
       content,
-      senderName
+      senderName,
     };
 
     const messages = await this.chatService.addMessage(messagePayload);
-  
+
     if (messages) {
       //send message to receiver on specific room id
       const messageEmit: any = {
