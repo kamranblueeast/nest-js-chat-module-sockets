@@ -1,4 +1,8 @@
-import { RoomTypeEnum, UpdateRoomTypeEnum } from '@app/shared/enum/chat.enum';
+import {
+  RoomTypeEnum,
+  SubscriptionTypeEnum,
+  UpdateRoomTypeEnum,
+} from '@app/shared/enum/chat.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -139,4 +143,25 @@ export class DeleteMessageRequest {
   @IsString()
   @IsNotEmpty()
   roomId: string;
+}
+
+export class UpdateSubscriptionRequest {
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  startDate: string;
+
+  @IsString()
+  @IsNotEmpty()
+  endDate: string;
+
+  @IsString()
+  @IsNotEmpty()
+  status: string;
+
+  @IsEnum(SubscriptionTypeEnum)
+  subscriptionType: SubscriptionTypeEnum;
 }

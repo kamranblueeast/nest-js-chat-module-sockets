@@ -6,3 +6,9 @@ export enum RoomTypeEnum {
 export enum UpdateRoomTypeEnum {
   'Group' = 'Group',
 }
+
+export enum SubscriptionTypeEnum {
+  'Free' = 'Free',
+  'PaidOne' = 'PaidOne',
+  'PaidTwo' = 'PaidTwo',
+}

@@ -6,6 +6,7 @@ import {
   RoomChatListRequest,
   RoomListRequest,
   UpdateRoomRequest,
+  UpdateSubscriptionRequest,
   UserConnectionRequest,
   UserRoomRequest,
 } from './dto';
@@ -62,6 +63,12 @@ export class ChatController {
   @Delete('room')
   private async deleteRoom(@Query() query: UserConnectionRequest) {
     const response = await this.chatService.deleteRoom(query);
+    return response;
+  }
+
+  @Put('subscription')
+  private async upsertSubscription(@Body() body: UpdateSubscriptionRequest) {
+    const response = await this.chatService.upsertSubscription(body);
     return response;
   }
 }

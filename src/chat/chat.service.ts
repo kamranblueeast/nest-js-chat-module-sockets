@@ -16,16 +16,24 @@ import {
   RoomChatListRequest,
   RoomListRequest,
   UpdateRoomRequest,
+  UpdateSubscriptionRequest,
   UserConnectionRequest,
   UserRoomRequest,
 } from './dto';
-import { RoomTypeEnum } from '@app/shared/enum/chat.enum';
+import { RoomTypeEnum, SubscriptionTypeEnum } from '@app/shared/enum/chat.enum';
+import { UserMessageCountDocument } from './model/userMessageCount.model';
+import { SubscriptionDocument } from './model/subscription.model';
+import { WsException } from '@nestjs/websockets';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel('Chat') private readonly chatModel: Model<ChatDocument>,
     @InjectModel('Room') private readonly roomModel: Model<RoomDocument>,
+    @InjectModel('Subscription')
+    private readonly subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel('UserMessageCount')
+    private readonly userMessageCountModel: Model<UserMessageCountDocument>,
   ) {}
 
   async createUserRoom(data: CreateRoomRequest) {
@@ -174,8 +182,129 @@ export class ChatService {
   }
 
   async addMessage(data) {
-    const response = await this.chatModel.create(data);
-    return response;
+    const userMessageLimit = await this.userMessageCountModel.findOne({
+      userId: data.senderId,
+    });
+    const subscription = await this.subscriptionModel.findOne({
+      userId: data.senderId,
+    });
+    const currentDate = new Date();
+    // Calculate the date 30 days back
+    const thirtyDaysAgo = new Date(currentDate);
+    thirtyDaysAgo.setDate(currentDate.getDate() - 30);
+    if (!subscription) {
+      if (
+        !userMessageLimit ||
+        (userMessageLimit?.startDate > thirtyDaysAgo &&
+          userMessageLimit.count < 2000)
+      ) {
+        const response = await this.chatModel.create(data);
+        await this.userMessageCountModel.updateOne(
+          {
+            userId: data.senderId,
+          },
+          { $inc: { count: 1 } },
+          { upsert: true },
+        );
+        return response;
+      } else {
+        if (!userMessageLimit || userMessageLimit?.startDate < thirtyDaysAgo) {
+          const response = await this.chatModel.create(data);
+          await this.userMessageCountModel.updateOne(
+            {
+              userId: data.senderId,
+            },
+            {
+              $set: { count: 1, startDate: new Date(), userId: data.senderId },
+            },
+            { upsert: true },
+          );
+          return response;
+        } else {
+          throw new WsException({
+            error: 'Your monthly message limit is over!',
+          });
+        }
+      }
+    } else if (
+      subscription?.subscriptionType === SubscriptionTypeEnum.PaidOne
+    ) {
+      if (subscription.endDate > currentDate) {
+        if (
+          !userMessageLimit ||
+          (userMessageLimit?.startDate > thirtyDaysAgo &&
+            userMessageLimit.count < 3500)
+        ) {
+          const response = await this.chatModel.create(data);
+          await this.userMessageCountModel.updateOne(
+            {
+              userId: data.senderId,
+            },
+            { $inc: { count: 1 } },
+            { upsert: true },
+          );
+          return response;
+        } else {
+          throw new WsException('Your monthly message limit is over!');
+        }
+      } else {
+        const response = await this.chatModel.create(data);
+        await this.subscriptionModel.deleteOne({
+          userId: data.senderId,
+        });
+        await this.userMessageCountModel.updateOne(
+          {
+            userId: data.senderId,
+          },
+          {
+            $set: { count: 1, startDate: new Date(), userId: data.senderId },
+          },
+          { upsert: true },
+        );
+        return response;
+      }
+    } else if (
+      subscription?.subscriptionType === SubscriptionTypeEnum.PaidTwo &&
+      subscription.endDate < currentDate
+    ) {
+      if (subscription.endDate > currentDate) {
+        if (
+          !userMessageLimit ||
+          (userMessageLimit?.startDate > thirtyDaysAgo &&
+            userMessageLimit.count < 5000)
+        ) {
+          const response = await this.chatModel.create(data);
+          await this.userMessageCountModel.updateOne(
+            {
+              userId: data.senderId,
+            },
+            { $inc: { count: 1 } },
+            { upsert: true },
+          );
+          return response;
+        } else {
+          throw new WsException({
+            error: 'Your monthly message limit is over!',
+          });
+        }
+      } else {
+        const response = await this.chatModel.create(data);
+        await this.subscriptionModel.deleteOne({
+          userId: data.senderId,
+        });
+        await this.userMessageCountModel.updateOne(
+          {
+            userId: data.senderId,
+          },
+          {
+            $set: { count: 1, startDate: new Date(), userId: data.senderId },
+          },
+          { upsert: true },
+        );
+        return response;
+      }
+    }
+    throw new WsException({ error: 'Your monthly message limit is over!' });
   }
 
   async findAndUpdate(criteria, data) {
@@ -380,6 +509,21 @@ export class ChatService {
     return {
       statusCode: HttpStatus.OK,
       data: { message: 'Room deleted successfully!' },
+      error: [],
+      success: true,
+    };
+  }
+
+  async upsertSubscription(data: UpdateSubscriptionRequest) {
+    const response = await this.subscriptionModel.findOneAndUpdate(
+      { userId: data.userId },
+      { $set: { ...data } },
+      { upsert: true, new: true },
+    );
+
+    return {
+      statusCode: HttpStatus.OK,
+      data: response,
       error: [],
       success: true,
     };

@@ -105,6 +105,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       senderName,
     };
 
+    
     const messages = await this.chatService.addMessage(messagePayload);
 
     if (messages) {
